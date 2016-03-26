@@ -1,0 +1,151 @@
+{% extends "layout.html" %}
+{% block head %}
+{{ super() }}
+<script type="text/javascript" src="http://d3js.org/d3.v3.min.js"></script>
+<script type="text/javascript" src="http://x3dom.org/download/x3dom.js"></script>
+<link rel="stylesheet" type="text/css" href="http://www.x3dom.org/download/x3dom.css"/>
+  <style>
+    
+  #universe {
+    background:#000 url(http://www.x3dom.org/x3dom/example/texture/solarSystem/starsbg.png);
+  }
+
+  
+  </style>
+  
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-sm-1"></div>    
+    <div class="col-sm-10">
+      <h2>Methods</h2>
+      <p>This app takes the JSON node and vertex data and displays it using
+        bootstrap CSS and D3.js</p>
+    </div>
+    <div class="col-sm-1"></div>
+  </div>
+  <div class="row">
+    <div class="col-sm-1"></div>        
+    <div id="method" class="col-sm-6"></div>
+    <div class="col-sm-2"><iframe id="info" height="700px" width="300px" frameborder="0"></iframe></div>
+<!--    <div class="col-sm-1"></div> --!>            
+  </div>
+</div>
+<script>
+
+      var width = 800
+      height = 700;
+
+      var data = [{{ system_data | tojson }}];
+
+      var data = data[0];
+
+      var x = d3.scale.linear()
+	  .domain([0, d3.max(data, function(d) { return d.x ; })])
+	  .range([ 0, width ]);
+
+      var y = d3.scale.linear()
+	  .domain([0, d3.max(data, function(d) { return d.y ; })])
+	  .range([ 0, height ]);
+
+      var chart = d3.select("#method");
+
+      var x3d = chart
+	  .append("x3d")
+	  .style("width", width + "px")
+	  .style("height", height + "px")
+	  .style("border", "none")
+	  .attr("id", "universe");
+
+      var scene = x3d.append("scene");
+
+      scene.append("viewpoint")
+	  .attr("id", "initial")
+	  .attr("position", "0.41709 0.10225 2.52990")
+	  .attr("zNear", "0.0")
+	  .attr("zFar", "4.73773")
+	  .attr("orientation", "-0.44910 0.88284 -0.13748 0.12087");
+
+      var coords = "";
+
+      var x_c = 0;
+      var y_c = 0;
+      var z_c = 0;
+      var r = 0;
+      var pm = 0;
+      var col = "";
+      var colr = 0;
+      var wiki = "";
+      var star_no = "";    
+
+      var star_img = chart.append("meta")
+	  .attr("id", "stars")
+	  .attr("star_0", "{{ url_for('static', filename='img/star_0.png') }}")
+      	  .attr("star_1", "{{ url_for('static', filename='img/star_1.png') }}");
+      
+      for (var i = 0; i < data.length; i++) {
+	  x_c = (data[i].x-11)/10
+	  z_c = (data[i].y-10)/10
+	  r = Math.pow(Math.pow(x_c,2) + Math.pow(z_c,2),0.5)
+	  pm = Math.pow(-1,Math.round(Math.random()*10))
+	  y_c = (pm*Math.random()*Math.min(20, 1/Math.pow(r,2)))/100
+	  coords = (data[i].x-11)/10 + " "+ y_c + " "+ (data[i].y-10)/10;
+	  colr = Math.random()
+      
+	  wiki="http://starwars.wikia.com/wiki/" + data[i].system.replace(/ /g,"_");
+	  
+	  var shape = scene.append("transform")
+	      .attr("translation", coords)
+	      .append("shape")
+	      .attr("onclick", "info.src='" + wiki  + "_system?useskin=wikiamobile';");
+/*
+      col = system_colour(data[i].region);
+*/
+	  file = (Math.floor(Math.random()*10) % 2)
+	  star_no = "{{ url_for('static', filename='img/star_" + (Math.floor(Math.random()*10) % 2) + ".png') }}";
+      	  star_no = "{{ url_for('static', filename=" + file + ") }}";
+
+	  
+	  shape.append("appearance")
+	      .append("ImageTexture")
+/*	      .attr("url", "{{ url_for('static', filename='img/star_0.png') }}");*/
+	      .attr("url",d3.select(stars).attr("star_" + file));
+/*
+	  .append("material")
+	  .attr("diffuseColor", col);
+*/
+      
+	  shape.append("sphere")
+	      .attr("id", data[i].system)
+	      .attr("radius", 0.004 * 0.5 * (3*Math.random() + 0.2));
+      }
+
+      function system_colour(region) {
+	  if (region == "Deep Core") {
+	      return "yellow";
+	  } else if (region == "Core Worlds") {
+	      return "red";
+	  } else if (region == "Colonies") {
+	      return "blue";
+	  } else if (region == "Inner Rim") {
+	      return "green";
+	  } else if (region == "Expansion Region") {
+	      return "purple";
+	  } else if (region == "Mid Rim") {
+	      return "violet";
+	  } else if (region == "Hutt Space") {
+	      return "orange"; 
+	  } else if (region == "Outer Rim Territories") {
+	      return "pink";
+	  } else if (region == "Unknown Regions" ) {
+	      return "white";
+	  } else {
+	      return "brown";
+	  }
+	  
+      }
+
+</script>
+{% endblock %}
